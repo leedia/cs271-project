@@ -12,16 +12,30 @@
     <script src="https://unpkg.com/leaflet@1.4.0/dist/leaflet.js" integrity="sha512-QVftwZFqvtRNi0ZyCtsznlKSWOStnDORoefr1enyq5mVL4tmKB3S/EnC3rRJcxCPavG10IcrVGSmPh6Qw5lwrg==" crossorigin=""></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/data.js"></script>
 
+    <style>
+      .chart {
+        height: 250px;
+        margin: 0 auto;
+        text-align: center;
+      }
+    </style>
 
   </head>
 
   <body>
     <div class = "container">
       <div class = "row">
+        <div class = "col-md-12">
+          <h1>EEGDecisions</h1>
+        </div>
+      </div>
+      <div class = "row">
         <div class = "col-md-6">
           <h2>Time Series</h2>
-
+          <div id = "timeseries"></div>
         </div>
         <div class = "col-md-6">
           <h2>Map</h2>
@@ -32,15 +46,20 @@
 
     <script>
 
-      $.get('data/location.csv', function(data) {
-
-        function csvToArray(csvString) {
+      function csvToArray(csvString, lim=0) {
 
           var csvArray = [];
           var csvRows = csvString.split(/\n/);
           var csvHeaders = csvRows.shift().split(','); // split headers
+          var limit = 0
+          if (lim == 0){
+            limit = csvRows.length-1;
+          }
+          else {
+            limit = lim
+          }
 
-          for (var rowIndex = 0; rowIndex < csvRows.length-1; ++rowIndex) {
+          for (var rowIndex = 0; rowIndex < limit; ++rowIndex) {
             var rowArray = csvRows[rowIndex].split(',');
             var rowObject = csvArray[rowIndex] = {};
             for (var propIndex = 0; propIndex < rowArray.length; ++propIndex) {
@@ -52,11 +71,12 @@
           return csvArray;
         }
 
+      $.get('data/location.csv', function(data) {
+
         var latlngs = [];
 
         data = csvToArray(data);
         data.forEach(function(item) {
-          console.log(parseFloat(item.latitude))
           latlngs.push([parseFloat(item.latitude), parseFloat(item.longitude)]);
         });
 
@@ -89,6 +109,172 @@
         map.on('click', onMapClick);
 
       });
+
+
+      $.get('data/theta.csv', function(data) {
+
+
+      });
+
+      ['mousemove', 'touchmove', 'touchstart'].forEach(function (eventType) {
+          document.getElementById('timeseries').addEventListener(
+              eventType,
+              function (e) {
+                  var chart,
+                      point,
+                      i,
+                      event;
+
+                  for (i = 0; i < Highcharts.charts.length; i = i + 1) {
+                      chart = Highcharts.charts[i];
+                      // Find coordinates within the chart
+                      event = chart.pointer.normalize(e);
+                      // Get the hovered point
+                      point = chart.series[0].searchPoint(event, true);
+
+                      if (point) {
+                          point.highlight(e);
+                      }
+                  }
+              }
+          );
+      });
+
+      /**
+       * Override the reset function, we don't need to hide the tooltips and
+       * crosshairs.
+       */
+      Highcharts.Pointer.prototype.reset = function () {
+          return undefined;
+      };
+
+      /**
+       * Highlight a point by showing tooltip, setting hover state and draw crosshair
+       */
+      Highcharts.Point.prototype.highlight = function (event) {
+          event = this.series.chart.pointer.normalize(event);
+          this.onMouseOver(); // Show the hover marker
+          this.series.chart.tooltip.refresh(this); // Show the tooltip
+          this.series.chart.xAxis[0].drawCrosshair(event, this); // Show the crosshair
+      };
+
+      /**
+       * Synchronize zooming through the setExtremes event handler.
+       */
+      function syncExtremes(e) {
+          var thisChart = this.chart;
+
+          if (e.trigger !== 'syncExtremes') { // Prevent feedback loop
+              Highcharts.each(Highcharts.charts, function (chart) {
+                  if (chart !== thisChart) {
+                      if (chart.xAxis[0].setExtremes) { // It is null while updating
+                          chart.xAxis[0].setExtremes(
+                              e.min,
+                              e.max,
+                              undefined,
+                              false,
+                              { trigger: 'syncExtremes' }
+                          );
+                      }
+                  }
+              });
+          }
+      }
+
+      // Get the data. The contents of the data file can be viewed at
+      Highcharts.ajax({
+          url: 'data/theta.csv',
+          dataType: 'csv',
+          success: function (csv) {
+
+              var datasets = [{name: "eeg1", data: []},{name: "eeg2", data: []},{name: "eeg3", data: []},{name: "eeg4", data: []}];
+              var time = []
+              csv = csvToArray(csv, 1000);
+
+              csv.forEach(function(item) {
+                datasets[0].data.push(parseFloat(item.eeg1));
+                datasets[1].data.push(parseFloat(item.eeg2));
+                datasets[2].data.push(parseFloat(item.eeg3));
+                datasets[3].data.push(parseFloat(item.eeg4));
+                time.push(parseFloat(item.utimestamp))
+              }); 
+
+              datasets.forEach(function (dataset, i) {
+
+                  // Add X values
+                  dataset.data = Highcharts.map(dataset.data, function (val, j) {
+                      return [time[j], val];
+                  });
+
+                  var chartDiv = document.createElement('div');
+                  chartDiv.className = 'chart';
+                  document.getElementById('timeseries').appendChild(chartDiv);
+
+                  Highcharts.chart(chartDiv, {
+                      chart: {
+                          marginLeft: 40, // Keep all charts left aligned
+                          spacingTop: 20,
+                          spacingBottom: 20
+                      },
+                      title: {
+                          text: dataset.name,
+                          align: 'left',
+                          margin: 0,
+                          x: 30
+                      },
+                      credits: {
+                          enabled: false
+                      },
+                      legend: {
+                          enabled: false
+                      },
+                      xAxis: {
+                          crosshair: true,
+                          events: {
+                              setExtremes: syncExtremes
+                          },
+                          labels: {
+                              format: '{value}'
+                          }
+                      },
+                      yAxis: {
+                          title: {
+                              text: null
+                          }
+                      },
+                      tooltip: {
+                          positioner: function () {
+                              return {
+                                  // right aligned
+                                  x: this.chart.chartWidth - this.label.width,
+                                  y: 10 // align to title
+                              };
+                          },
+                          borderWidth: 0,
+                          backgroundColor: 'none',
+                          pointFormat: '{point.y}',
+                          headerFormat: '',
+                          shadow: false,
+                          style: {
+                              fontSize: '18px'
+                          },
+                          valueDecimals: dataset.valueDecimals
+                      },
+                      series: [{
+                          data: dataset.data,
+                          name: dataset.name,
+                          type: dataset.type,
+                          color: Highcharts.getOptions().colors[i],
+                          fillOpacity: 0.3,
+                          tooltip: {
+                              valueSuffix: ' '
+                          }
+                      }]
+                  });
+              });
+          }
+      });
+
 
     </script>
 
