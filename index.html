@@ -16,29 +16,22 @@
 
   <body>
 
-    <div id="mapid" style="width: 600px; height: 400px;"></div>
+    <div id="mapid" style="width: 800px; height: 600px;"></div>
     <script>
 
       $.get('data/location.csv', function(data) {
 
         function csvToArray(csvString) {
 
-          // The array we're going to build
           var csvArray = [];
-          // Break it into rows to start
           var csvRows = csvString.split(/\n/);
-          // Take off the first line to get the headers, then split that into an array
-          var csvHeaders = csvRows.shift().split(',');
-          // Loop through remaining rows
+          var csvHeaders = csvRows.shift().split(','); // split headers
+
           for (var rowIndex = 0; rowIndex < csvRows.length-1; ++rowIndex) {
             var rowArray = csvRows[rowIndex].split(',');
-            // Create a new row object to store our data.
             var rowObject = csvArray[rowIndex] = {};
-            // Then iterate through the remaining properties and use the headers as keys
             for (var propIndex = 0; propIndex < rowArray.length; ++propIndex) {
-              // Grab the value from the row array we're looping through...
               var propValue = rowArray[propIndex];
-              // ...also grab the relevant header (the RegExp in both of these removes quotes)
               var propLabel = csvHeaders[propIndex];
               rowObject[propLabel] = propValue;
             }
@@ -46,7 +39,6 @@
           return csvArray;
         }
 
-        // Multiple Markers
         var latlngs = [];
 
         data = csvToArray(data);
