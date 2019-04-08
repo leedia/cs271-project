@@ -71,6 +71,23 @@
           return csvArray;
         }
 
+      function getLatLngDict(csvArray) {
+        var latLngDict = {};
+        var count = 1;
+        for (var index = 0; index < csvArray.length-1; ++index) {
+          //console.log("index:", csvArray[index]);
+          //console.log("index+1:", csvArray[index]);
+          if (JSON.stringify(csvArray[index]) == JSON.stringify(csvArray[index+1])) {
+
+            count++;
+          } else {
+            latLngDict[csvArray[index]] = count;
+            count = 1;
+          }
+        }
+        return latLngDict;
+      }
+
       $.get('data/location.csv', function(data) {
 
         var latlngs = [];
@@ -79,6 +96,12 @@
         data.forEach(function(item) {
           latlngs.push([parseFloat(item.latitude), parseFloat(item.longitude)]);
         });
+
+        var latLngDict = getLatLngDict(latlngs);
+
+        console.log(latLngDict);
+
+        
 
         var map = L.map('mapid').setView([42.374208, -71.116687], 13);
 
@@ -92,6 +115,8 @@
 
         L.marker([42.374208, -71.116687]).addTo(map)
           .bindPopup("<b>Hello world!</b><br />I am a popup.").openPopup();
+
+
 
         var polyline = L.polyline(latlngs, {color: 'red', opacity: 0.3}).addTo(map);
         // zoom the map to the polyline
