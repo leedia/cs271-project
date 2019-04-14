@@ -38,6 +38,9 @@
           <div id = "timeseries"></div>
         </div>
         <div class = "col-md-6">
+          <h2>
+            <input type="number" name="significant location">
+          </h2>
           <h2>Map</h2>
           <div id="mapid" style="width: 1000px; height: 1000px;"></div>
         </div>
@@ -75,8 +78,8 @@
         var latLngDict = {};
         var count = 1;
         for (var index = 0; index < csvArray.length-1; ++index) {
-          //console.log("index:", csvArray[index]);
-          //console.log("index+1:", csvArray[index]);
+          console.log("index:", csvArray[index]);
+          console.log("index+1:", csvArray[index]);
           if (JSON.stringify(csvArray[index]) == JSON.stringify(csvArray[index+1])) {
 
             count++;
