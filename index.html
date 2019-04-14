@@ -34,12 +34,17 @@
       </div>
       <div class = "row">
         <div class = "col-md-6">
+          <h5>Buffer</h5>
+          <input type="number" name="buffer">
           <h2>Time Series</h2>
           <div id = "timeseries"></div>
         </div>
         <div class = "col-md-6">
           <h2>
+            <h5>Significant Duration</h5>
             <input type="number" name="significant location">
+            <h5>Radius</h5>
+            <input type="number" name="radius">
           </h2>
           <h2>Map</h2>
           <div id="mapid" style="width: 1000px; height: 1000px;"></div>
@@ -78,8 +83,8 @@
         var latLngDict = {};
         var count = 1;
         for (var index = 0; index < csvArray.length-1; ++index) {
-          console.log("index:", csvArray[index]);
-          console.log("index+1:", csvArray[index]);
+          //console.log("index:", csvArray[index]);
+          //console.log("index+1:", csvArray[index]);
           if (JSON.stringify(csvArray[index]) == JSON.stringify(csvArray[index+1])) {
 
             count++;
