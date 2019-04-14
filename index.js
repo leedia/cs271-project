@@ -1,3 +1,11 @@
+//Passed to function:                                                    
+//:::    lat1, lon1 = Latitude and Longitude of point 1 (in decimal degrees)  
+//:::    lat2, lon2 = Latitude and Longitude of point 2 (in decimal degrees)  
+//:::    unit = the unit you desire for results                               
+//:::           where: 'M' is statute miles (default)                         
+//:::                  'K' is kilometers                                     
+//:::                  'N' is nautical miles                                
+//:::                                          
 function distance(lat1, lon1, lat2, lon2, unit) {
 	if ((lat1 == lat2) && (lon1 == lon2)) {
 		return 0;
