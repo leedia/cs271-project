@@ -54,6 +54,17 @@
 
     <script>
 
+      /**
+      Define User Values
+
+      Significant Duration: The duration of time spent at a unique latitude, longitude
+      coordinate that dictates whether it is a significant location
+      
+
+      **/
+
+      var significantDuration = 1000;
+
       function csvToArray(csvString, lim=0) {
 
           var csvArray = [];
@@ -96,9 +107,6 @@
         return latLngDict;
       }
 
-      function showClickablePoints(latLngDict, duration, radius) {
-        
-      }
 
       $.get('data/location.csv', function(data) {
 
@@ -111,7 +119,7 @@
 
         var latLngDict = getLatLngDict(latlngs);
 
-        console.log(latLngDict);
+        console.log(latLngDict["42.34,-71.1168"]);
 
         
 
@@ -124,6 +132,15 @@
             'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
           id: 'mapbox.streets'
         }).addTo(map);
+
+        for (var key in latLngDict) {
+          if (latLngDict[key] > significantDuration) {
+            var latitude = key.split(",")[0];
+            var longitude = key.split(",")[1];
+            L.marker([latitude, longitude]).addTo(map)
+              .bindPopup("Significant Location").openPopup();
+          }
+        }
 
         L.marker([42.374208, -71.116687]).addTo(map)
           .bindPopup("<b>Hello world!</b><br />I am a popup.").openPopup();
