@@ -34,6 +34,8 @@
       </div>
       <div class = "row">
         <div class = "col-md-6">
+          <h5>Buffer</h5>
+          <input type="number" name="buffer">
           <h2>Time Series</h2>
           <form>
               <div class="form-group">
@@ -49,6 +51,12 @@
           <div id = "timeseries"></div>
         </div>
         <div class = "col-md-6">
+          <h2>
+            <h5>Significant Duration</h5>
+            <input type="number" name="significant location">
+            <h5>Radius</h5>
+            <input type="number" name="radius">
+          </h2>
           <h2>Map</h2>
           <div id="mapid" style="width: 1000px; height: 1000px;"></div>
         </div>
@@ -59,8 +67,8 @@
 
         var before = 10
         var after = 10
-        var timestamp = 1545778268357230
-        var timestamps = [1545778268357230, 1545697113818270]
+        // var timestamp = 1545778268357230
+        // var timestamps = [1545778268357230, 1545697113818270]
 
         function getTime(t) {
             timestamp = t
@@ -68,6 +76,20 @@
         }
 
       function csvToArray(csvString, t=0, b=0, a=Infinity) {
+      /**
+      Define User Values
+
+      Significant Duration: The duration of time spent at a unique latitude, longitude
+      coordinate that dictates whether it is a significant location
+      
+
+      **/
+
+      var significantDuration = 1000;
+      var sigLatLngs = [];
+      var sigTimestamps = [];
+
+      function csvToArray(csvString, lim=0) {
 
           var csvArray = [];
           var csvRows = csvString.split(/\n/);
@@ -113,20 +135,21 @@
         return latLngDict;
       }
 
+
       $.get('data/location.csv', function(data) {
 
         var latlngs = [];
+        var timeStamps = [];
 
         data = csvToArray(data);
         data.forEach(function(item) {
           latlngs.push([parseFloat(item.latitude), parseFloat(item.longitude)]);
+          var date = item.utimestamp;
+          timeStamps.push(date);
         });
 
         var latLngDict = getLatLngDict(latlngs);
 
-        console.log(latLngDict);
-
-        
 
         var map = L.map('mapid').setView([42.374208, -71.116687], 13);
 
@@ -140,15 +163,36 @@
 
         // create popup on click
         var popup = "<b>Timestamps</b><br />"
-        for (var i = 0; i < timestamps.length; ++i) {
-            popup += "<a href = javascript:getTime("+timestamps[i].toString()+");renderChart();>"+timestamps[i].toString()+"</a><br />"
+        for (var i = 0; i < sigTimestamps.length; ++i) {
+            popup += "<a href = javascript:getTime("+sigTimestamps[i].toString()+");renderChart();>"+sigTimestamps[i].toString()+"</a><br />"
         }
 
         L.marker([42.374208, -71.116687]).addTo(map)
           .bindPopup(popup).openPopup();
 
+        var latlngArray = Object.keys(latLngDict);
 
+        for (var key in latLngDict) {
+          if (latLngDict[key] > significantDuration) {
+            var latitude = key.split(",")[0];
+            var longitude = key.split(",")[1];
+            
+            for (i = 0; i < latlngArray.length; i++) {
+               if (latlngArray[i] == key) {
+                sigTimestamps.push(parseFloat(timeStamps[i]));
+               }
+            }
+            sigLatLngs.push([latitude, longitude]);
+            
+            L.marker([latitude, longitude]).addTo(map)
+              .bindPopup("Significant Location").openPopup();
+          }
+        }
 
+        // console.log(sigLatLngs);
+        // console.log(sigTimestamps);
+
+        
         var polyline = L.polyline(latlngs, {color: 'red', opacity: 0.3}).addTo(map);
         // zoom the map to the polyline
         map.fitBounds(polyline.getBounds());
