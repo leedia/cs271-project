@@ -62,6 +62,11 @@
         var timestamp = 1545778268357230
         var timestamps = [1545778268357230, 1545697113818270]
 
+        function getTime(t) {
+            timestamp = t
+            console.log(timestamp)
+        }
+
       function csvToArray(csvString, t=0, b=0, a=Infinity) {
 
           var csvArray = [];
@@ -136,7 +141,7 @@
         // create popup on click
         var popup = "<b>Timestamps</b><br />"
         for (var i = 0; i < timestamps.length; ++i) {
-            
+            popup += "<a href = javascript:getTime("+timestamps[i].toString()+");>"+timestamps[i].toString()+"</a><br />"
         }
 
         L.marker([42.374208, -71.116687]).addTo(map)
