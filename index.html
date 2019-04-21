@@ -38,11 +38,11 @@
           <form>
               <div class="form-group">
                 <label for="before">Before (in sec):</label>
-                <input type="number" class="form-control is-valid" id="before">
+                <input type="number" class="form-control is-valid" id="before" value=10>
               </div>
               <div class="form-group">
                 <label for="after">After (in sec):</label>
-                <input type="text" class="form-control is-valid" id="after">
+                <input type="text" class="form-control is-valid" id="after" value=0>
               </div>
               <button type="submit" id="submit" class="btn btn-primary" onclick="renderChart();return false;">Submit</button>
           </form>
@@ -72,8 +72,8 @@
           var csvArray = [];
           var csvRows = csvString.split(/\n/);
           var csvHeaders = csvRows.shift().split(','); // split headers
-          var bef = t - (b*1000)
-          var aft = t + (a*1000)
+          var bef = t - (b*1000000)
+          var aft = t + (a*1000000)
           var rowIndex = 0
           var tIndex = 3
 
@@ -141,7 +141,7 @@
         // create popup on click
         var popup = "<b>Timestamps</b><br />"
         for (var i = 0; i < timestamps.length; ++i) {
-            popup += "<a href = javascript:getTime("+timestamps[i].toString()+");>"+timestamps[i].toString()+"</a><br />"
+            popup += "<a href = javascript:getTime("+timestamps[i].toString()+");renderChart();>"+timestamps[i].toString()+"</a><br />"
         }
 
         L.marker([42.374208, -71.116687]).addTo(map)
