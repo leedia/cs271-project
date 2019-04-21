@@ -64,7 +64,6 @@
     </div>
 
     <script>
-
         var before = 10
         var after = 10
         // var timestamp = 1545778268357230
@@ -84,12 +83,6 @@
       
 
       **/
-
-      var significantDuration = 1000;
-      var sigLatLngs = [];
-      var sigTimestamps = [];
-
-      function csvToArray(csvString, lim=0) {
 
           var csvArray = [];
           var csvRows = csvString.split(/\n/);
@@ -136,10 +129,13 @@
       }
 
 
-      $.get('data/location.csv', function(data) {
+      $.get('data/location_cleaned.csv', function(data) {
 
         var latlngs = [];
         var timeStamps = [];
+        var significantDuration = 1000;
+        var sigLatLngs = [];
+        var sigTimestamps = [];
 
         data = csvToArray(data);
         data.forEach(function(item) {
