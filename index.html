@@ -34,8 +34,6 @@
       </div>
       <div class = "row">
         <div class = "col-md-6">
-          <h5>Buffer</h5>
-          <input type="number" name="buffer">
           <h2>Time Series</h2>
           <form>
               <div class="form-group">
@@ -51,13 +49,14 @@
           <div id = "timeseries"></div>
         </div>
         <div class = "col-md-6">
-          <h2>
-            <h5>Significant Duration</h5>
-            <input type="number" name="significant location">
-            <h5>Radius</h5>
-            <input type="number" name="radius">
-          </h2>
-          <h2>Map</h2>
+            <h2>Map</h2>
+            <form>
+                <div class="form-group">
+                    <label for="significant location">Significant Duration</label>
+                    <input type="number" name="significant location" id="sigdur" value="1000">
+                </div>
+            </form>
+          
           <div id="mapid" style="width: 1000px; height: 1000px;"></div>
         </div>
       </div>
@@ -71,7 +70,7 @@
 
         function getTime(t) {
             timestamp = t
-            console.log(timestamp)
+            //console.log(timestamp)
         }
 
       function csvToArray(csvString, t=0, b=0, a=Infinity) {
@@ -133,7 +132,8 @@
 
         var latlngs = [];
         var timeStamps = [];
-        var significantDuration = 1000;
+        console.log(parseInt(document.getElementById("sigdur").value));
+        var significantDuration = parseInt(document.getElementById("sigdur").value);
         var sigLatLngs = [];
         var sigTimestamps = [];
 
@@ -291,7 +291,7 @@
                   var datasets = [{name: "eeg1", data: []},{name: "eeg2", data: []},{name: "eeg3", data: []},{name: "eeg4", data: []}];
                   var time = []
                   csv = csvToArray(csv, timestamp, before, after);
-                  console.log(csv)
+                  //console.log(csv)
 
                   csv.forEach(function(item) {
                     datasets[0].data.push(parseFloat(item.eeg1));
