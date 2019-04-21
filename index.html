@@ -157,14 +157,6 @@
           id: 'mapbox.streets'
         }).addTo(map);
 
-        // create popup on click
-        var popup = "<b>Timestamps</b><br />"
-        for (var i = 0; i < sigTimestamps.length; ++i) {
-            popup += "<a href = javascript:getTime("+sigTimestamps[i].toString()+");renderChart();>"+sigTimestamps[i].toString()+"</a><br />"
-        }
-
-        L.marker([42.374208, -71.116687]).addTo(map)
-          .bindPopup(popup).openPopup();
 
         var latlngArray = Object.keys(latLngDict);
 
@@ -179,9 +171,15 @@
                }
             }
             sigLatLngs.push([latitude, longitude]);
+
+            // create popup on click
+            var popup = "<b>Significant Location</b><br />"
+            for (var i = 0; i < sigTimestamps.length; ++i) {
+                popup += "<a href = javascript:getTime("+sigTimestamps[i].toString()+");renderChart();>"+sigTimestamps[i].toString()+"</a><br />"
+            }
             
             L.marker([latitude, longitude]).addTo(map)
-              .bindPopup("Significant Location").openPopup();
+              .bindPopup(popup).openPopup();
           }
         }
 
