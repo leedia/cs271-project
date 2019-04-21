@@ -35,6 +35,17 @@
       <div class = "row">
         <div class = "col-md-6">
           <h2>Time Series</h2>
+          <form>
+              <div class="form-group">
+                <label for="before">Before (in sec):</label>
+                <input type="number" class="form-control is-valid" id="before">
+              </div>
+              <div class="form-group">
+                <label for="after">After (in sec):</label>
+                <input type="text" class="form-control is-valid" id="after">
+              </div>
+              <button type="submit" id="submit" class="btn btn-primary" onclick="renderChart();return false;">Submit</button>
+          </form>
           <div id = "timeseries"></div>
         </div>
         <div class = "col-md-6">
@@ -46,26 +57,35 @@
 
     <script>
 
-      function csvToArray(csvString, lim=0) {
+        var before = 10
+        var after = 10
+        var timestamp = 1545778268357230
+        var timestamps = [1545778268357230, 1545697113818270]
+
+      function csvToArray(csvString, t=0, b=0, a=Infinity) {
 
           var csvArray = [];
           var csvRows = csvString.split(/\n/);
           var csvHeaders = csvRows.shift().split(','); // split headers
-          var limit = 0
-          if (lim == 0){
-            limit = csvRows.length-1;
-          }
-          else {
-            limit = lim
-          }
+          var bef = t - (b*1000)
+          var aft = t + (a*1000)
+          var rowIndex = 0
+          var tIndex = 3
 
-          for (var rowIndex = 0; rowIndex < limit; ++rowIndex) {
+          for (var rowIndex = 0; rowIndex < csvRows.length-1; ++rowIndex) {
             var rowArray = csvRows[rowIndex].split(',');
-            var rowObject = csvArray[rowIndex] = {};
-            for (var propIndex = 0; propIndex < rowArray.length; ++propIndex) {
-              var propValue = rowArray[propIndex];
-              var propLabel = csvHeaders[propIndex];
-              rowObject[propLabel] = propValue;
+            var utime = parseInt(rowArray[tIndex])
+            if (utime < bef) {
+                continue;
+            } else if (utime >= bef && utime <= aft) {
+                var rowObject = csvArray[rowIndex] = {};
+                for (var propIndex = 0; propIndex < rowArray.length; ++propIndex) {
+                  var propValue = rowArray[propIndex];
+                  var propLabel = csvHeaders[propIndex];
+                  rowObject[propLabel] = propValue;
+                }
+            } else { // after aft
+                break;
             }
           }
           return csvArray;
@@ -113,8 +133,14 @@
           id: 'mapbox.streets'
         }).addTo(map);
 
+        // create popup on click
+        var popup = "<b>Timestamps</b><br />"
+        for (var i = 0; i < timestamps.length; ++i) {
+            
+        }
+
         L.marker([42.374208, -71.116687]).addTo(map)
-          .bindPopup("<b>Hello world!</b><br />I am a popup.").openPopup();
+          .bindPopup(popup).openPopup();
 
 
 
@@ -206,99 +232,108 @@
           }
       }
 
-      // Get the data. The contents of the data file can be viewed at
-      Highcharts.ajax({
-          url: 'data/theta.csv',
-          dataType: 'csv',
-          success: function (csv) {
+      // Highcharts
+      function renderChart() {
+          document.getElementById("timeseries").innerHTML="";
+          var before = $("#before").val();
+          var after = $("#after").val();
+          $("#before").attr("value", before);
+          $("#after").attr("value", after);
 
-              var datasets = [{name: "eeg1", data: []},{name: "eeg2", data: []},{name: "eeg3", data: []},{name: "eeg4", data: []}];
-              var time = []
-              csv = csvToArray(csv, 1000);
+          Highcharts.ajax({
+              url: 'data/theta.csv',
+              dataType: 'csv',
+              success: function (csv) {
 
-              csv.forEach(function(item) {
-                datasets[0].data.push(parseFloat(item.eeg1));
-                datasets[1].data.push(parseFloat(item.eeg2));
-                datasets[2].data.push(parseFloat(item.eeg3));
-                datasets[3].data.push(parseFloat(item.eeg4));
-                time.push(parseFloat(item.utimestamp))
-              }); 
+                  var datasets = [{name: "eeg1", data: []},{name: "eeg2", data: []},{name: "eeg3", data: []},{name: "eeg4", data: []}];
+                  var time = []
+                  csv = csvToArray(csv, timestamp, before, after);
+                  console.log(csv)
 
-              datasets.forEach(function (dataset, i) {
+                  csv.forEach(function(item) {
+                    datasets[0].data.push(parseFloat(item.eeg1));
+                    datasets[1].data.push(parseFloat(item.eeg2));
+                    datasets[2].data.push(parseFloat(item.eeg3));
+                    datasets[3].data.push(parseFloat(item.eeg4));
+                    time.push(parseFloat(item.utimestamp))
+                  }); 
 
-                  // Add X values
-                  dataset.data = Highcharts.map(dataset.data, function (val, j) {
-                      return [time[j], val];
-                  });
+                  datasets.forEach(function (dataset, i) {
 
-                  var chartDiv = document.createElement('div');
-                  chartDiv.className = 'chart';
-                  document.getElementById('timeseries').appendChild(chartDiv);
+                      // Add X values
+                      dataset.data = Highcharts.map(dataset.data, function (val, j) {
+                          return [time[j], val];
+                      });
 
-                  Highcharts.chart(chartDiv, {
-                      chart: {
-                          marginLeft: 40, // Keep all charts left aligned
-                          spacingTop: 20,
-                          spacingBottom: 20
-                      },
-                      title: {
-                          text: dataset.name,
-                          align: 'left',
-                          margin: 0,
-                          x: 30
-                      },
-                      credits: {
-                          enabled: false
-                      },
-                      legend: {
-                          enabled: false
-                      },
-                      xAxis: {
-                          crosshair: true,
-                          events: {
-                              setExtremes: syncExtremes
+                      var chartDiv = document.createElement('div');
+                      chartDiv.className = 'chart';
+                      document.getElementById('timeseries').appendChild(chartDiv);
+
+                      Highcharts.chart(chartDiv, {
+                          chart: {
+                              marginLeft: 40, // Keep all charts left aligned
+                              spacingTop: 20,
+                              spacingBottom: 20
                           },
-                          labels: {
-                              format: '{value}'
-                          }
-                      },
-                      yAxis: {
                           title: {
-                              text: null
-                          }
-                      },
-                      tooltip: {
-                          positioner: function () {
-                              return {
-                                  // right aligned
-                                  x: this.chart.chartWidth - this.label.width,
-                                  y: 10 // align to title
-                              };
+                              text: dataset.name,
+                              align: 'left',
+                              margin: 0,
+                              x: 30
                           },
-                          borderWidth: 0,
-                          backgroundColor: 'none',
-                          pointFormat: '{point.y}',
-                          headerFormat: '',
-                          shadow: false,
-                          style: {
-                              fontSize: '18px'
+                          credits: {
+                              enabled: false
                           },
-                          valueDecimals: dataset.valueDecimals
-                      },
-                      series: [{
-                          data: dataset.data,
-                          name: dataset.name,
-                          type: dataset.type,
-                          color: Highcharts.getOptions().colors[i],
-                          fillOpacity: 0.3,
+                          legend: {
+                              enabled: false
+                          },
+                          xAxis: {
+                              crosshair: true,
+                              events: {
+                                  setExtremes: syncExtremes
+                              },
+                              labels: {
+                                  format: '{value}'
+                              }
+                          },
+                          yAxis: {
+                              title: {
+                                  text: null
+                              }
+                          },
                           tooltip: {
-                              valueSuffix: ' '
-                          }
-                      }]
+                              positioner: function () {
+                                  return {
+                                      // right aligned
+                                      x: this.chart.chartWidth - this.label.width,
+                                      y: 10 // align to title
+                                  };
+                              },
+                              borderWidth: 0,
+                              backgroundColor: 'none',
+                              pointFormat: '{point.y}',
+                              headerFormat: '',
+                              shadow: false,
+                              style: {
+                                  fontSize: '18px'
+                              },
+                              valueDecimals: dataset.valueDecimals
+                          },
+                          series: [{
+                              data: dataset.data,
+                              name: dataset.name,
+                              type: dataset.type,
+                              color: Highcharts.getOptions().colors[i],
+                              fillOpacity: 0.3,
+                              tooltip: {
+                                  valueSuffix: ' '
+                              }
+                          }]
+                      });
                   });
-              });
-          }
-      });
+              }
+          });
+        } // closes function
 
 
     </script>
