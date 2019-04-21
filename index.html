@@ -118,15 +118,12 @@
         data = csvToArray(data);
         data.forEach(function(item) {
           latlngs.push([parseFloat(item.latitude), parseFloat(item.longitude)]);
-          var date = new Date(item.timestamp);
+          var date = item.utimestamp;
           timeStamps.push(date);
         });
 
         var latLngDict = getLatLngDict(latlngs);
 
-        //console.log(latLngDict["42.34,-71.1168"]);
-
-        
 
         var map = L.map('mapid').setView([42.374208, -71.116687], 13);
 
@@ -138,15 +135,27 @@
           id: 'mapbox.streets'
         }).addTo(map);
 
+        var latlngArray = Object.keys(latLngDict);
+
         for (var key in latLngDict) {
           if (latLngDict[key] > significantDuration) {
             var latitude = key.split(",")[0];
             var longitude = key.split(",")[1];
+            
+            for (i = 0; i < latlngArray.length; i++) {
+               if (latlngArray[i] == key) {
+                sigTimestamps.push(parseFloat(timeStamps[i]));
+               }
+            }
             sigLatLngs.push([latitude, longitude]);
+            
             L.marker([latitude, longitude]).addTo(map)
               .bindPopup("Significant Location").openPopup();
           }
         }
+
+        // console.log(sigLatLngs);
+        // console.log(sigTimestamps);
 
         
         var polyline = L.polyline(latlngs, {color: 'red', opacity: 0.3}).addTo(map);
