@@ -52,9 +52,10 @@
             <h2>Map</h2>
             <form>
                 <div class="form-group">
-                    <label for="significant location">Significant Duration</label>
-                    <input type="number" name="significant location" id="sigdur" value="1000">
+                    <label for="sigdur">Significant Duration:</label>
+                    <input type="number" class="form-control is-valid" id="sigdur" value=1000>
                 </div>
+                <button type="submit" id="changesigdur" class="btn btn-primary" onclick="changeSigDur();return false;">Submit</button>
             </form>
           
           <div id="mapid" style="width: 1000px; height: 1000px;"></div>
@@ -128,87 +129,88 @@
       }
 
 
-      $.get('data/location_cleaned.csv', function(data) {
+      
+      var $jq = jQuery.noConflict();
+      var map = L.map('mapid').setView([42.374208, -71.116687], 13);
+      function changeSigDur() {
+            $jq.get('data/location_cleaned.csv', function(data) {
 
-        var latlngs = [];
-        var timeStamps = [];
-        console.log(parseInt(document.getElementById("sigdur").value));
-        var significantDuration = parseInt(document.getElementById("sigdur").value);
-        var sigLatLngs = [];
-        var sigTimestamps = [];
+                var significantDuration = $jq("#sigdur").val();
+                $jq("#sigdur").attr("value", significantDuration);
+                console.log(significantDuration);
 
-        data = csvToArray(data);
-        data.forEach(function(item) {
-          latlngs.push([parseFloat(item.latitude), parseFloat(item.longitude)]);
-          var date = item.utimestamp;
-          timeStamps.push(date);
-        });
+            var latlngs = [];
+            var timeStamps = [];
 
-        var latLngDict = getLatLngDict(latlngs);
+            var sigLatLngs = [];
+            var sigTimestamps = [];
+
+            data = csvToArray(data);
+            data.forEach(function(item) {
+              latlngs.push([parseFloat(item.latitude), parseFloat(item.longitude)]);
+              var date = item.utimestamp;
+              timeStamps.push(date);
+            });
+
+            var latLngDict = getLatLngDict(latlngs);
+
+            L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw', {
+              maxZoom: 18,
+              attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
+                '<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
+                'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+              id: 'mapbox.streets'
+            }).addTo(map);
 
 
-        var map = L.map('mapid').setView([42.374208, -71.116687], 13);
+            var latlngArray = Object.keys(latLngDict);
 
-        L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw', {
-          maxZoom: 18,
-          attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
-            '<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
-            'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
-          id: 'mapbox.streets'
-        }).addTo(map);
+            for (var key in latLngDict) {
+              if (latLngDict[key] > significantDuration) {
+                var latitude = key.split(",")[0];
+                var longitude = key.split(",")[1];
+                
+                for (i = 0; i < latlngArray.length; i++) {
+                   if (latlngArray[i] == key) {
+                    sigTimestamps.push(parseFloat(timeStamps[i]));
+                   }
+                }
+                sigLatLngs.push([latitude, longitude]);
 
-
-        var latlngArray = Object.keys(latLngDict);
-
-        for (var key in latLngDict) {
-          if (latLngDict[key] > significantDuration) {
-            var latitude = key.split(",")[0];
-            var longitude = key.split(",")[1];
-            
-            for (i = 0; i < latlngArray.length; i++) {
-               if (latlngArray[i] == key) {
-                sigTimestamps.push(parseFloat(timeStamps[i]));
-               }
+                // create popup on click
+                var popup = "<b>Significant Location</b><br />"
+                for (var i = 0; i < sigTimestamps.length; ++i) {
+                    popup += "<a href = javascript:getTime("+sigTimestamps[i].toString()+");renderChart();>"+sigTimestamps[i].toString()+"</a><br />"
+                }
+                
+                L.marker([latitude, longitude]).addTo(map)
+                  .bindPopup(popup).openPopup();
+              }
             }
-            sigLatLngs.push([latitude, longitude]);
 
-            // create popup on click
-            var popup = "<b>Significant Location</b><br />"
-            for (var i = 0; i < sigTimestamps.length; ++i) {
-                popup += "<a href = javascript:getTime("+sigTimestamps[i].toString()+");renderChart();>"+sigTimestamps[i].toString()+"</a><br />"
-            }
+            // console.log(sigLatLngs);
+            // console.log(sigTimestamps);
+
             
-            L.marker([latitude, longitude]).addTo(map)
-              .bindPopup(popup).openPopup();
-          }
-        }
+            var polyline = L.polyline(latlngs, {color: 'red', opacity: 0.3}).addTo(map);
+            // zoom the map to the polyline
+            map.fitBounds(polyline.getBounds());
 
-        // console.log(sigLatLngs);
-        // console.log(sigTimestamps);
+            var popup = L.popup();
 
-        
-        var polyline = L.polyline(latlngs, {color: 'red', opacity: 0.3}).addTo(map);
-        // zoom the map to the polyline
-        map.fitBounds(polyline.getBounds());
+            function onMapClick(e) {
+              popup
+                .setLatLng(e.latlng)
+                .setContent("You clicked the map at " + e.latlng.toString())
+                .openOn(map);
+            }
 
-        var popup = L.popup();
+            map.on('click', onMapClick);
 
-        function onMapClick(e) {
-          popup
-            .setLatLng(e.latlng)
-            .setContent("You clicked the map at " + e.latlng.toString())
-            .openOn(map);
-        }
+          });
+      };
 
-        map.on('click', onMapClick);
-
-      });
-
-
-      $.get('data/theta.csv', function(data) {
-
-
-      });
+      changeSigDur();
 
       ['mousemove', 'touchmove', 'touchstart'].forEach(function (eventType) {
           document.getElementById('timeseries').addEventListener(
@@ -278,10 +280,10 @@
       // Highcharts
       function renderChart() {
           document.getElementById("timeseries").innerHTML="";
-          var before = $("#before").val();
-          var after = $("#after").val();
-          $("#before").attr("value", before);
-          $("#after").attr("value", after);
+          var before = $jq("#before").val();
+          var after = $jq("#after").val();
+          $jq("#before").attr("value", before);
+          $jq("#after").attr("value", after);
 
           Highcharts.ajax({
               url: 'data/theta.csv',
